@@ -252,6 +252,7 @@ unpackEquals arg1 arg2 (AnyUnpacker unpacker) =
                 return $ unpacked1 == unpacked2
         `catchError` (const $ return False)
 
+-- Less strict eqv
 equal :: [LispVal] -> ThrowsError LispVal
 equal [arg1, arg2] = do
       primitiveEquals <- or <$> mapM (unpackEquals arg1 arg2)
@@ -260,7 +261,7 @@ equal [arg1, arg2] = do
       return $ Bool (primitiveEquals || let (Bool x) = eqvEquals in x)
 equal badArgList = throwError $ NumArgs 2 badArgList
 
-test :: [String] -> IO (String)
+test :: [String] -> IO String
 test args = do
    let evaled = fmap show $ readExpr (head args) >>= eval
    return $ extractValue $ trapError evaled
