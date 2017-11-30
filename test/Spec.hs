@@ -9,12 +9,18 @@ main = hspec $ do
     it "evals Atom" $ do
       res <- Lib.test ["'atom"]
       res `shouldBe` "atom"
+    it "evals quoted Atom" $ do
+      res <- Lib.test ["'(atom)"]
+      res `shouldBe` "(atom)"
     it "evals String" $ do
       res <- Lib.test ["\"a string\""]
       res `shouldBe` "\"a string\""
     it "evals Bool (atom)" $ do
       res <- Lib.test ["#t"]
       res `shouldBe` "#t"
+    it "evals DottedList" $ do
+      res <- Lib.test ["'(1 2 . 1)"]
+      res `shouldBe` "(1 2 . 1)"
     it "evals DottedList (quoted)" $ do
       res <- Lib.test ["(quote ((1 2) . 1))"]
       res `shouldBe` "((1 2) . 1)"

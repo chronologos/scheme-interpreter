@@ -6,8 +6,22 @@ module Lib
 import           Control.Applicative           ((<$>))
 import           Control.Monad                 (liftM)
 import           Control.Monad.Except
+import           Data.Maybe                    (fromJust, isJust)
 import           Debug.Trace                   (trace)
+-- import           Text.Parsec.Language
 import           Text.ParserCombinators.Parsec hiding (spaces)
+-- import qualified Text.ParserCombinators.Parsec.Token as Token
+
+-- -- lexer
+-- languageDef = emptyDef {
+--   Token.identStart = letter <|> symbol,
+--   Token.identLetter = letter <|> digit <|> symbol,
+--   Token.reservedNames = ["if", "quote"],
+--   Token.reservedOpNames = []
+-- }
+--
+-- lexer = Token.makeTokenParser languageDef
+-- whiteSpace = Token.whiteSpace
 
 data LispVal = Atom String
              | List [LispVal]
@@ -15,13 +29,22 @@ data LispVal = Atom String
              | Number Integer
              | String String
              | Bool Bool
+
+-- Left-factored grammar
+data LispList = CommonList [LispVal]
+              | Tail
+              | DottedSuffix LispVal
+
 instance Show LispVal where show = showVal
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
 
 spaces :: Parser ()
-spaces = skipMany1 space
+spaces = skipMany1 (space <?> "spaces")
+
+spaces' :: Parser()
+spaces' = skipMany (space <?> "spaces'")
 
 parseString :: Parser LispVal
 parseString = do
@@ -49,24 +72,20 @@ parseQuoted = do
     x <- parseExpr
     return $ List [Atom "quote", x]
 
-parseList :: Parser LispVal
-parseList = List <$> sepBy parseExpr spaces
-
-parseDottedList :: Parser LispVal
-parseDottedList = do
-    head <- endBy parseExpr spaces
-    tail <- char '.' >> spaces >> parseExpr
-    return $ DottedList head tail
-
 parseExpr :: Parser LispVal
 parseExpr = parseAtom
          <|> parseString
          <|> parseNumber
          <|> parseQuoted
          <|> do char '('
-                x <- try parseList <|> parseDottedList
+                x <- many1 (do e <- parseExpr; spaces'; return e)
+                y <- optionMaybe ((char '.' >> spaces >> parseExpr)  <?> "parseDotExpr failed")
+                z <- if isJust y then return $ DottedSuffix $ fromJust y else return Tail
+                z' <- case z of Tail           -> return $ List x
+                                DottedSuffix s -> return $ DottedList x s
                 char ')'
-                return x
+                return z'
+         <?> "parseExpr!"
 
 readExpr :: String -> ThrowsError LispVal
 readExpr input = case parse parseExpr "lisp" input of
