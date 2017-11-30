@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Lib, Repl
+  exposed-modules:     Parse, Repl, Primitives, Error, Types
   build-depends:       base
                      , parsec
                      , mtl

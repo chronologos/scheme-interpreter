@@ -1,7 +1,8 @@
 module Repl where
 
 import           Control.Applicative ((<$>))
-import           Lib
+import           Error
+import           Parse
 import           System.IO
 
 flushStr :: String -> IO ()
