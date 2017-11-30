@@ -1,27 +1,12 @@
 {-# LANGUAGE ExistentialQuantification #-}
-module Lib
-    ( test
-    ) where
+module Lib where
 
 import           Control.Applicative           ((<$>))
 import           Control.Monad                 (liftM)
 import           Control.Monad.Except
 import           Data.Maybe                    (fromJust, isJust)
 import           Debug.Trace                   (trace)
--- import           Text.Parsec.Language
 import           Text.ParserCombinators.Parsec hiding (spaces)
--- import qualified Text.ParserCombinators.Parsec.Token as Token
-
--- -- lexer
--- languageDef = emptyDef {
---   Token.identStart = letter <|> symbol,
---   Token.identLetter = letter <|> digit <|> symbol,
---   Token.reservedNames = ["if", "quote"],
---   Token.reservedOpNames = []
--- }
---
--- lexer = Token.makeTokenParser languageDef
--- whiteSpace = Token.whiteSpace
 
 data LispVal = Atom String
              | List [LispVal]
@@ -78,7 +63,7 @@ parseExpr = parseAtom
          <|> parseNumber
          <|> parseQuoted
          <|> do char '('
-                x <- many1 (do e <- parseExpr; spaces'; return e)
+                x <- many (do e <- parseExpr; spaces'; return e)
                 y <- optionMaybe ((char '.' >> spaces >> parseExpr)  <?> "parseDotExpr failed")
                 z <- if isJust y then return $ DottedSuffix $ fromJust y else return Tail
                 z' <- case z of Tail           -> return $ List x
@@ -141,7 +126,13 @@ primitives = [("+", numericBinop (+)),
               ("string<?", strBoolBinop (<)),
               ("string>?", strBoolBinop (>)),
               ("string<=?", strBoolBinop (<=)),
-              ("string>=?", strBoolBinop (>=))
+              ("string>=?", strBoolBinop (>=)),
+              ("car", car),
+              ("cdr", cdr),
+              ("cons", cons),
+              ("eq?", eqv),
+              ("eqv?", eqv),
+              ("equal?", equal)
              ]
 
 isType :: (LispVal -> Bool) -> [LispVal] -> ThrowsError LispVal
